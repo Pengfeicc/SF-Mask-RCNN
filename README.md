@@ -1,4 +1,4 @@
-# Synthetic Dataset RGB-D Mask R-CNN for unknown objects segmentation
+# Synthetic Dataset RGB-D Fusion Mask R-CNN for unknown objects segmentation
 
 ## Updates
 ### Test in different scenes by realsense d435(2022/05/27)
