@@ -55,6 +55,7 @@ def main():
     display = True
     #runtime_daw = sl.RuntimeParameters()
     runtime_fill = sl.RuntimeParameters(sensing_mode=sl.SENSING_MODE.FILL) # add depth filtering when raw depth image as input
+    
     left = sl.Mat()
     depth_img = sl.Mat()
     res = sl.Resolution(640, 360)
@@ -65,14 +66,20 @@ def main():
         err_code = cap.grab(runtime_fill)
         if err_code != sl.ERROR_CODE.SUCCESS:
             break
+            
         cap.retrieve_image(left, sl.VIEW.LEFT, resolution=res)
         cap.retrieve_measure(depth_img, sl.MEASURE.DEPTH, resolution=res)
+        # convert left color streaming to numpy
         rgb = left.get_data()
-        rgb = rgb[:, :, :3] # slip BGRA to BGR
+        # slip BGRA to BGR
+        rgb = rgb[:, :, :3]
+        # convert depth images to numpy, dtype: ndarray
         depth = depth_img.get_data()
+        # convert numpy to torch, dtype: tensor
         depth = torch.from_numpy(depth)
+        # convert 1.tensor to 3.tensor
         depth = depth.repeat(3, 1, 1)
-
+        # normalize depth values to (0, 1)
         depth = (depth - init_cap_params.depth_minimum_distance) / (init_cap_params.depth_maximum_distance - init_cap_params.depth_minimum_distance)
 
         val_mask = torch.ones([depth.shape[1], depth.shape[2]])
@@ -81,7 +88,7 @@ def main():
 
         rgb_transform = transforms.Compose([
             transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
+        ]) # convert rgb to tensor and normalize it
 
         img = torch.cat([rgb_transform(rgb), depth, val_mask], dim=0)
         img = img.unsqueeze(0)
@@ -101,8 +108,9 @@ def main():
         object_idx = [i for i in range(len(pred_labels)) if pred_labels[i] == 1]
         result_image = draw_prediction(rgb, object_idx, img_arr, pred_boxes, pred_scores, args.thresh)
         cv2.imshow("demo", result_image)
+        
         k = cv2.waitKey(100)
-        if k == 27:
+        if k == 27: # press 'esc' to close camera
             cv2.destroyWindow()
             cap.close()
             break
