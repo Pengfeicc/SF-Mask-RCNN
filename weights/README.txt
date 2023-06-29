@@ -1,1 +1,1 @@
-Download weight and unzip in this file
+Download weight and unzip it in this file
